@@ -1,0 +1,115 @@
+# =============================================================================
+# terraform.tfvars.example
+# =============================================================================
+# Copy this file to terraform.tfvars and customize for your project.
+#
+# Minimum required variables:
+#   - container_image (unless you use the default "placeholder")
+#
+# Usage:
+#   cp terraform.tfvars.example terraform.tfvars
+#   terraform init
+#   terraform plan
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# General
+# ---------------------------------------------------------------------------
+name_prefix = "myapp"
+aws_region  = "us-east-2"
+tags = {
+  Environment = "production"
+  ManagedBy   = "terraform"
+}
+
+# ---------------------------------------------------------------------------
+# Feature flags — toggle entire sections on/off
+# ---------------------------------------------------------------------------
+create_state             = true    # S3 + DynamoDB for Terraform state management
+create_state_locking_table = true  # DynamoDB table for state locking (~$0/mo)
+create_vpc               = true    # VPC with subnets, IGW, route tables
+create_ecs               = true    # ECS cluster + services
+create_rds               = false   # RDS database instance
+create_delivery          = false   # CloudFront + Route53 + S3 frontend + CI/CD
+
+# ---------------------------------------------------------------------------
+# VPC
+# ---------------------------------------------------------------------------
+vpc_cidr           = "10.0.0.0/16"
+az_count           = 2
+create_nat_gateway = false  # set to true if private subnets need outbound internet (~$32/mo)
+
+# Bring your own VPC (leave empty if create_vpc = true)
+# existing_vpc_id                = "vpc-xxxxxxxx"
+# existing_public_subnet_ids     = ["subnet-xxxxx", "subnet-xxxxx"]
+# existing_private_subnet_ids    = ["subnet-xxxxx", "subnet-xxxxx"]
+# existing_ecs_security_group_id = "sg-xxxxx"
+
+# ---------------------------------------------------------------------------
+# Database (RDS) — only applies when create_rds = true
+# ---------------------------------------------------------------------------
+# rds_engine              = "postgres"
+# rds_engine_version      = "16"
+# rds_instance_class      = "db.t4g.micro"
+# rds_allocated_storage   = 20
+# rds_db_name             = "myapp"
+# rds_username            = "myapp"
+# rds_password            = "change-me"
+# rds_backup_retention    = 1
+# rds_deletion_protection = true
+
+# ---------------------------------------------------------------------------
+# Compute (ECS)
+# ---------------------------------------------------------------------------
+launch_type     = "EC2"          # "EC2" or "FARGATE"
+ec2_instance_type = "t3.micro"   # only used when launch_type = "EC2"
+ecs_asg_min_size        = 1
+ecs_asg_max_size        = 3
+ecs_asg_desired_capacity = 1
+
+container_image = "123456789012.dkr.ecr.us-east-2.amazonaws.com/myapp"
+container_tag   = "latest"
+
+app_port         = 8000
+container_cpu    = 512
+container_memory = 512
+
+container_environment = {
+  APP_ENV  = "production"
+  LOG_LEVEL = "info"
+  # DB_HOST and REDIS_URL are auto-injected when RDS/Redis are enabled
+}
+
+container_health_check = {
+  command      = ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
+  interval     = 30
+  timeout      = 5
+  retries      = 3
+  start_period = 120
+}
+
+create_alb   = false
+create_worker = false
+create_redis  = true
+
+log_retention_days        = 7
+enable_container_insights = false
+enable_execute_command    = true
+
+# ---------------------------------------------------------------------------
+# Delivery (CloudFront, Route53, S3, CI/CD) — only applies when
+# create_delivery = true. Requires domain_name to be set.
+# ---------------------------------------------------------------------------
+# domain_name             = "example.com"
+# create_route53_zone     = true
+# existing_zone_id        = ""   # only if create_route53_zone = false
+# acm_certificate_arn     = ""   # existing ACM cert ARN
+
+# create_frontend_bucket  = true
+# frontend_bucket_name    = ""   # auto-generated from domain if empty
+
+# create_cloudfront_frontend = true
+# create_cloudfront_api      = false
+# cloudfront_price_class     = "PriceClass_100"
+
+# create_ci_cd_user          = true
